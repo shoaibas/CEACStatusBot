@@ -61,12 +61,12 @@ except KeyError as e:
 
 
 # --- Optional: Email notifications ---
-FROM = os.getenv("FROM")  # Must be a verified sender in Mailgun
-TO = os.getenv("TO")      # Can be multiple recipients separated by |
+FROM = os.getenv("FROM")
+TO = os.getenv("TO")
+API_KEY = os.getenv("API")  # NEW: Mailgun API key
 
-if FROM and TO:
-    # PASSWORD and SMTP are ignored in Mailgun version, so pass empty string
-    emailNotificationHandle = EmailNotificationHandle(FROM, TO, "")
+if FROM and TO and API_KEY:
+    emailNotificationHandle = EmailNotificationHandle(FROM, TO, apiKey=API_KEY)
     notificationManager.addHandle(emailNotificationHandle)
 else:
     print("Email notification config missing or incomplete")
