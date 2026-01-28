@@ -1,20 +1,17 @@
-import os
-import requests
+import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
-
 from .handle import NotificationHandle
 
 class EmailNotificationHandle(NotificationHandle):
-    def __init__(self, fromEmail: str, toEmail: str, apiKey: str = None, domain: str = None) -> None:
+    def __init__(self, fromEmail: str, toEmail: str, password: str, smtp: str = "smtp.office365.com", port: int = 587) -> None:
         super().__init__()
         self.__fromEmail = fromEmail
         self.__toEmail = toEmail.split("|")
-        # API key comes from parameter or environment variable
-        self.__apiKey = apiKey or os.getenv("API")
-        # Mailgun domain (e.g., sandbox123.mailgun.org)
-        self.__domain = domain or fromEmail.split("@")[1]
+        self.__password = password
+        self.__smtp = smtp
+        self.__port = port
 
     def send(self, result):
         # Mail subject and body
@@ -27,17 +24,12 @@ class EmailNotificationHandle(NotificationHandle):
         msg['To'] = ";".join(self.__toEmail)
         msg.attach(MIMEText(mail_content, 'plain', 'utf-8'))
 
-        # Send via Mailgun API
-        url = f"https://api.mailgun.net/v3/{self.__domain}/messages"
-        data = {
-            "from": self.__fromEmail,
-            "to": self.__toEmail,
-            "subject": mail_title,
-            "text": mail_content
-        }
-
-        response = requests.post(url, auth=("api", self.__apiKey), data=data)
-        if response.status_code != 200:
-            print(f"Mailgun send failed: {response.status_code} - {response.text}")
-        else:
-            print("Mail sent successfully via Mailgun.")
+        try:
+            # Connect to Outlook SMTP
+            with smtplib.SMTP(self.__smtp, self.__port) as server:
+                server.starttls()  # TLS is required
+                server.login(self.__fromEmail, self.__password)
+                server.sendmail(self.__fromEmail, self.__toEmail, msg.as_string())
+            print("Mail sent successfully via Outlook SMTP.")
+        except Exception as e:
+            print(f"Outlook SMTP send failed: {e}")
