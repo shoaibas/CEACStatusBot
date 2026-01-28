@@ -11,7 +11,7 @@ class EmailNotificationHandle(NotificationHandle):
         self.__toEmail = toEmail.split("|")
         self.__password = password
         self.__smtpServer = smtpServer
-        self.__smtpPort = 465  # SSL port
+        self.__smtpPort = 465  # Gmail SSL port
 
     def send(self, result):
         mail_title = f'[CEACStatusBot] {result["application_num_origin"]} : {result["status"]}'
@@ -20,11 +20,11 @@ class EmailNotificationHandle(NotificationHandle):
         msg = MIMEMultipart()
         msg["Subject"] = Header(mail_title, 'utf-8')
         msg["From"] = self.__fromEmail
-        msg['To'] = ";".join(self.__toEmail)
+        msg["To"] = ";".join(self.__toEmail)
         msg.attach(MIMEText(mail_content, 'plain', 'utf-8'))
 
         try:
-            # Create SMTP_SSL connection
+            # SSL connection automatically connects and closes
             with smtplib.SMTP_SSL(self.__smtpServer, self.__smtpPort) as smtp:
                 smtp.login(self.__fromEmail, self.__password)
                 smtp.sendmail(self.__fromEmail, self.__toEmail, msg.as_string())
