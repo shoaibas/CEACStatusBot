@@ -10,9 +10,9 @@ from CEACStatusBot import (
     TelegramNotificationHandle,
 )
 
-# --- Load .env if present, else fallback to system env ---
+# --- Load .env if present ---
 if os.path.exists(".env"):
-    load_dotenv(dotenv_path=".env")  # loads into os.environ
+    load_dotenv(dotenv_path=".env")
 else:
     print(".env not found, using system environment only")
 
@@ -58,14 +58,14 @@ except KeyError as e:
     raise RuntimeError(f"Missing required env var: {e}") from e
 
 
-# --- Optional: Email notifications ---
+# --- Optional: Email notifications (Gmail SSL) ---
 FROM = os.getenv("FROM")         # Gmail address
 TO = os.getenv("TO")             # Recipients separated by "|"
 PASSWORD = os.getenv("PASSWORD") # Gmail app password
-SMTP = os.getenv("SMTP")         # Optional, defaults to smtp.gmail.com
 
 if FROM and TO and PASSWORD:
-    emailNotificationHandle = EmailNotificationHandle(FROM, TO, PASSWORD, SMTP or "smtp.gmail.com")
+    # Gmail SSL version: only pass FROM, TO, PASSWORD
+    emailNotificationHandle = EmailNotificationHandle(FROM, TO, PASSWORD)
     notificationManager.addHandle(emailNotificationHandle)
 else:
     print("Email notification config missing or incomplete")
@@ -86,12 +86,11 @@ else:
 notificationManager.send()
 
 
-# --- TEST EMAIL (will send once, delete this block after confirmation) ---
+# --- TEST EMAIL (will send once, delete after confirmation) ---
 print("Debug: Email config:")
 print("FROM:", FROM)
 print("TO:", TO)
 print("PASSWORD loaded:", bool(PASSWORD))
-print("SMTP:", SMTP or "smtp.gmail.com")
 
 if FROM and TO and PASSWORD:
     print("Sending test email...")
