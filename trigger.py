@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+
 from dotenv import load_dotenv
 
 from CEACStatusBot import (
@@ -9,11 +10,12 @@ from CEACStatusBot import (
     TelegramNotificationHandle,
 )
 
-# --- Load .env if present ---
+# --- Load .env if present, else fallback to system env ---
 if os.path.exists(".env"):
-    load_dotenv(dotenv_path=".env")
+    load_dotenv(dotenv_path=".env")  # loads into os.environ
 else:
     print(".env not found, using system environment only")
+
 
 def download_artifact():
     try:
@@ -23,15 +25,16 @@ def download_artifact():
             text=True,
         )
         artifacts = json.loads(result.stdout)
-        artifact_exists = any(a["name"] == "status-artifact" for a in artifacts["artifacts"])
+        artifact_exists = any(artifact["name"] == "status-artifact" for artifact in artifacts["artifacts"])
 
         if artifact_exists:
             subprocess.run(["gh", "run", "download", "--name", "status-artifact"], check=True)
         else:
-            with open("status_record.json", "w") as f:
-                json.dump({"statuses": []}, f)
+            with open("status_record.json", "w") as file:
+                json.dump({"statuses": []}, file)
     except Exception as e:
         print(f"Error downloading artifact: {e}")
+
 
 # --- Read env vars ---
 GH_TOKEN = os.getenv("GH_TOKEN")
@@ -54,19 +57,21 @@ try:
 except KeyError as e:
     raise RuntimeError(f"Missing required env var: {e}") from e
 
-# --- Email notifications ---
-FROM = os.getenv("FROM")
-TO = os.getenv("TO")
-PASSWORD = os.getenv("PASSWORD")  # Your Gmail App Password
-SMTP = os.getenv("SMTP", "smtp.gmail.com")  # default Gmail SMTP
+
+# --- Optional: Email notifications ---
+FROM = os.getenv("FROM")         # Gmail address
+TO = os.getenv("TO")             # Recipients separated by "|"
+PASSWORD = os.getenv("PASSWORD") # Gmail app password
+SMTP = os.getenv("SMTP")         # Optional, defaults to smtp.gmail.com
 
 if FROM and TO and PASSWORD:
-    emailNotificationHandle = EmailNotificationHandle(FROM, TO, PASSWORD, SMTP)
+    emailNotificationHandle = EmailNotificationHandle(FROM, TO, PASSWORD, SMTP or "smtp.gmail.com")
     notificationManager.addHandle(emailNotificationHandle)
 else:
     print("Email notification config missing or incomplete")
 
-# --- Telegram notifications ---
+
+# --- Optional: Telegram notifications ---
 BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
 CHAT_ID = os.getenv("TG_CHAT_ID")
 
@@ -76,15 +81,17 @@ if BOT_TOKEN and CHAT_ID:
 else:
     print("Telegram bot notification config missing or incomplete")
 
+
 # --- Send notifications ---
 notificationManager.send()
 
-# --- TEST EMAIL (remove after confirming it works) ---
+
+# --- TEST EMAIL (will send once, delete this block after confirmation) ---
 print("Debug: Email config:")
 print("FROM:", FROM)
 print("TO:", TO)
 print("PASSWORD loaded:", bool(PASSWORD))
-print("SMTP:", SMTP)
+print("SMTP:", SMTP or "smtp.gmail.com")
 
 if FROM and TO and PASSWORD:
     print("Sending test email...")
