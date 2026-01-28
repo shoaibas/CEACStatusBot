@@ -64,10 +64,11 @@ except KeyError as e:
 FROM = os.getenv("FROM")
 TO = os.getenv("TO")
 PASSWORD = os.getenv("PASSWORD")
-SMTP = os.getenv("SMTP", "")
+SMTP = os.getenv("SMTP", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", 465))
 
 if FROM and TO and PASSWORD:
-    emailNotificationHandle = EmailNotificationHandle(FROM, TO, PASSWORD, SMTP)
+    emailNotificationHandle = EmailNotificationHandle(FROM, TO, PASSWORD, SMTP, SMTP_PORT)
     notificationManager.addHandle(emailNotificationHandle)
 else:
     print("Email notification config missing or incomplete")
