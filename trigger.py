@@ -63,10 +63,12 @@ except KeyError as e:
 # --- Optional: Email notifications ---
 FROM = os.getenv("FROM")
 TO = os.getenv("TO")
-API_KEY = os.getenv("API")  # Mailgun API key
+PASSWORD = os.getenv("PASSWORD")
+SMTP = os.getenv("SMTP", "smtp.office365.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 
-if FROM and TO and API_KEY:
-    emailNotificationHandle = EmailNotificationHandle(FROM, TO, apiKey=API_KEY)
+if FROM and TO and PASSWORD:
+    emailNotificationHandle = EmailNotificationHandle(FROM, TO, PASSWORD, SMTP, SMTP_PORT)
     notificationManager.addHandle(emailNotificationHandle)
 else:
     print("Email notification config missing or incomplete")
@@ -91,9 +93,11 @@ notificationManager.send()
 print("Debug: Email config:")
 print("FROM:", FROM)
 print("TO:", TO)
-print("API_KEY loaded:", bool(API_KEY))
+print("PASSWORD loaded:", bool(PASSWORD))
+print("SMTP:", SMTP)
+print("SMTP_PORT:", SMTP_PORT)
 
-if FROM and TO and API_KEY:
+if FROM and TO and PASSWORD:
     print("Sending test email...")
     emailNotificationHandle.send({
         "application_num_origin": "TEST",
