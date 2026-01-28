@@ -15,14 +15,14 @@ DEFAULT_ACTIVE_HOURS = "00:00-23:59"
 class NotificationManager:
     def __init__(
         self,
-        location: str,
+    #    location: str,
         number: str,
         passport_number: str,
         surname: str,
         captchaHandle: CaptchaHandle = OnnxCaptchaHandle("captcha.onnx"),
     ) -> None:
         self.__handleList = []
-        self.__location = location
+     #   self.__location = location
         self.__number = number
         self.__captchaHandle = captchaHandle
         self.__passport_number = passport_number
@@ -45,7 +45,7 @@ class NotificationManager:
 
     def send(self) -> None:
         res = query_status(
-            self.__location,
+      #      self.__location,
             self.__number,
             self.__passport_number,
             self.__surname,

@@ -12,7 +12,7 @@ from CEACStatusBot import (
 
 # --- Load .env if present, else fallback to system env ---
 if os.path.exists(".env"):
-    load_dotenv(dotenv_path=".env")  # loads into os.environ
+    load_dotenv(dotenv_path=".env")
 else:
     print(".env not found, using system environment only")
 
@@ -36,7 +36,7 @@ def download_artifact():
         print(f"Error downloading artifact: {e}")
 
 
-# --- Read env vars with fallback ---
+# --- Read env vars ---
 GH_TOKEN = os.getenv("GH_TOKEN")
 if not GH_TOKEN:
     print("GH_TOKEN not found")
@@ -44,24 +44,28 @@ if not GH_TOKEN:
 if not os.path.exists("status_record.json"):
     download_artifact()
 
+
 try:
-    LOCATION = os.environ["LOCATION"]
     NUMBER = os.environ["NUMBER"]
     PASSPORT_NUMBER = os.environ["PASSPORT_NUMBER"]
     SURNAME = os.environ["SURNAME"]
-    notificationManager = NotificationManager(LOCATION, NUMBER, PASSPORT_NUMBER, SURNAME)
+
+    notificationManager = NotificationManager(
+        number=NUMBER,
+        passport_number=PASSPORT_NUMBER,
+        surname=SURNAME
+    )
 except KeyError as e:
     raise RuntimeError(f"Missing required env var: {e}") from e
 
 
 # --- Optional: Email notifications ---
-FROM = os.getenv("FROM")
-TO = os.getenv("TO")
-PASSWORD = os.getenv("PASSWORD")
-SMTP = os.getenv("SMTP", "")
+FROM = os.getenv("FROM")         # Gmail address
+TO = os.getenv("TO")             # Recipients separated by "|"
+PASSWORD = os.getenv("PASSWORD") # Gmail app password
 
 if FROM and TO and PASSWORD:
-    emailNotificationHandle = EmailNotificationHandle(FROM, TO, PASSWORD, SMTP)
+    emailNotificationHandle = EmailNotificationHandle(FROM, TO, PASSWORD)
     notificationManager.addHandle(emailNotificationHandle)
 else:
     print("Email notification config missing or incomplete")
@@ -80,3 +84,4 @@ else:
 
 # --- Send notifications ---
 notificationManager.send()
+

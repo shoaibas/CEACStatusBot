@@ -1,127 +1,105 @@
 import requests
 from bs4 import BeautifulSoup
 import time
-
 from CEACStatusBot.captcha import CaptchaHandle, OnnxCaptchaHandle
 
-def query_status(location, application_num, passport_number, surname, captchaHandle: CaptchaHandle = OnnxCaptchaHandle("captcha.onnx")):
+def query_status(application_num, passport_number, surname, captchaHandle: CaptchaHandle = OnnxCaptchaHandle("captcha.onnx")):
     failCount = 0
-    result = {
-        "success": False,
-    }
-    backupTime = 5
+    result = {"success": False}
+    ROOT = "https://ceac.state.gov"
 
     while failCount < 5:
         if failCount > 0:
-            print(f"Retrying... Attempt {failCount + 1} / 5 in {backupTime} seconds")
-            time.sleep(backupTime)
+            # exponential backoff for retries
+            time.sleep(10 * failCount)
         failCount += 1
+
         headers = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-            "Accept-Encoding": "gzip, deflate, br",
-            "Accept-Language": "en,zh-CN;q=0.9,zh;q=0.8",
-            "Cache-Control": "no-cache",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
             "Connection": "keep-alive",
-            "Host": "ceac.state.gov",
+            "Upgrade-Insecure-Requests": "1",
         }
 
         session = requests.Session()
-        ROOT = "https://ceac.state.gov"
-
         try:
-            r = session.get(url=f"{ROOT}/ceacstattracker/status.aspx?App=NIV", headers=headers)
-        except Exception as e:
-            print(e)
+            r = session.get(f"{ROOT}/ceacstattracker/status.aspx?App=IV", headers=headers, timeout=15)
+        except (requests.exceptions.RequestException, requests.exceptions.ConnectionError):
+            print("GET failed, retrying...")
             continue
 
-        soup = BeautifulSoup(r.text, features="lxml")
+        soup = BeautifulSoup(r.text, "lxml")
 
-        # Find captcha image
-        captcha = soup.find(name="img", id="c_status_ctl00_contentplaceholder1_defaultcaptcha_CaptchaImage")
-        image_url = ROOT + captcha["src"]
-        img_resp = session.get(image_url)
+        captcha_img = soup.find("img", id="c_status_ctl00_contentplaceholder1_defaultcaptcha_CaptchaImage")
+        if not captcha_img:
+            print("Captcha image not found, retrying...")
+            continue
 
-        # Resolve captcha
-        captcha_num = captchaHandle.solve(img_resp.content)
-        print(f"Captcha solved: {captcha_num}")
+        img_url = ROOT + captcha_img["src"]
+        try:
+            img_resp = session.get(img_url, timeout=15)
+        except (requests.exceptions.RequestException, requests.exceptions.ConnectionError):
+            print("Captcha image GET failed, retrying...")
+            continue
 
-        # Find the correct value for the location dropdown
-        location_dropdown = soup.find("select", id="Location_Dropdown")
-        location_value = None
-        for option in location_dropdown.find_all("option"):
-            if location in option.text:
-                location_value = option["value"]
-                break
+        captcha_value = captchaHandle.solve(img_resp.content)
 
-        if not location_value:
-            print("Location not found in dropdown options.")
-            return {"success": False}
-
-        # Fill form
-        def update_from_current_page(cur_page, name, data):
-            ele = cur_page.find(name="input", attrs={"name": name})
-            if ele:
-                data[name] = ele["value"]
+        def copy_hidden(name, data):
+            el = soup.find("input", {"name": name})
+            if el:
+                data[name] = el.get("value", "")
 
         data = {
-            "ctl00$ToolkitScriptManager1": "ctl00$ContentPlaceHolder1$UpdatePanel1|ctl00$ContentPlaceHolder1$btnSubmit",
-            "ctl00_ToolkitScriptManager1_HiddenField": ";;AjaxControlToolkit, Version=4.1.40412.0, Culture=neutral, PublicKeyToken=28f01b0e84b6d53e:en-US:acfc7575-cdee-46af-964f-5d85d9cdcf92:de1feab2:f9cec9bc:a67c2700:f2c8e708:8613aea7:3202a5a2:ab09e3fe:87104b7c:be6fb298",
             "__EVENTTARGET": "ctl00$ContentPlaceHolder1$btnSubmit",
             "__EVENTARGUMENT": "",
-            "__LASTFOCUS": "",
-            "__VIEWSTATE": "8GJOG5GAuT1ex7KX3jakWssS08FPVm5hTO2feqUpJk8w5ukH4LG/o39O4OFGzy/f2XLN8uMeXUQBDwcO9rnn5hdlGUfb2IOmzeTofHrRNmB/hwsFyI4mEx0mf7YZo19g",
-            "__VIEWSTATEGENERATOR": "DBF1011F",
-            "__VIEWSTATEENCRYPTED": "",
-            "ctl00$ContentPlaceHolder1$Visa_Application_Type": "NIV",
-            "ctl00$ContentPlaceHolder1$Location_Dropdown": location_value,  # Use the correct value
+            "__ASYNCPOST": "true",
             "ctl00$ContentPlaceHolder1$Visa_Case_Number": application_num,
-            "ctl00$ContentPlaceHolder1$Captcha": captcha_num,
             "ctl00$ContentPlaceHolder1$Passport_Number": passport_number,
             "ctl00$ContentPlaceHolder1$Surname": surname,
-            "LBD_VCID_c_status_ctl00_contentplaceholder1_defaultcaptcha": "a81747f3a56d4877bf16e1a5450fb944",
-            "LBD_BackWorkaround_c_status_ctl00_contentplaceholder1_defaultcaptcha": "1",
-            "__ASYNCPOST": "true",
+            "ctl00$ContentPlaceHolder1$Captcha": captcha_value,
         }
 
-        fields_need_update = [
+        for field in [
             "__VIEWSTATE",
             "__VIEWSTATEGENERATOR",
             "LBD_VCID_c_status_ctl00_contentplaceholder1_defaultcaptcha",
-        ]
-        for field in fields_need_update:
-            update_from_current_page(soup, field, data)
+            "LBD_BackWorkaround_c_status_ctl00_contentplaceholder1_defaultcaptcha",
+        ]:
+            copy_hidden(field, data)
 
         try:
-            r = session.post(url=f"{ROOT}/ceacstattracker/status.aspx", headers=headers, data=data)
-        except Exception as e:
-            print(e)
+            r = session.post(f"{ROOT}/ceacstattracker/status.aspx", headers=headers, data=data, timeout=15)
+        except (requests.exceptions.RequestException, requests.exceptions.ConnectionError):
+            print("POST failed, retrying...")
             continue
 
-        soup = BeautifulSoup(r.text, features="lxml")
-        status_tag = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblStatus")
-        if not status_tag:
+        # wait 5 seconds after submitting before parsing results
+        time.sleep(5)
+        soup = BeautifulSoup(r.text, "lxml")
+
+        status_el = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblStatus")
+        case_el = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblCaseNo")
+
+        if not status_el or not case_el:
+            print("Status or case number not found, retrying...")
             continue
 
-        application_num_returned = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblCaseNo").string
-        assert application_num_returned == application_num
-        status = status_tag.string
-        visa_type = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblAppName").string
-        case_created = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblSubmitDate").string
-        case_last_updated = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblStatusDate").string
-        description = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblMessage").string
+        msg_el = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblMessage")
+        visa_el = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblAppName")
 
         result.update({
             "success": True,
-            "time": str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())),
-            "visa_type": visa_type,
-            "status": status,
-            "case_created": case_created,
-            "case_last_updated": case_last_updated,
-            "description": description,
-            "application_num": application_num_returned,
-            "application_num_origin": application_num
+            "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "visa_type": visa_el.text.strip() if visa_el else "IV",
+            "status": status_el.text.strip(),
+            "description": msg_el.text.strip() if msg_el else "",
+            "application_num": case_el.text.strip(),
+            "application_num_origin": application_num,
+            "case_created": None,
+            "case_last_updated": None,
         })
+
         break
 
     return result
