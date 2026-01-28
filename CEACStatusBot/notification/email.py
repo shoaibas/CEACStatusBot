@@ -23,10 +23,13 @@ class EmailNotificationHandle(NotificationHandle):
         msg['To'] = ";".join(self.__toEmail)
         msg.attach(MIMEText(mail_content, 'plain', 'utf-8'))
 
+        smtp = smtplib.SMTP_SSL(self.__smtpServer, self.__smtpPort)
         try:
-            with smtplib.SMTP_SSL(self.__smtpServer, self.__smtpPort) as smtp:
-                smtp.login(self.__fromEmail, self.__password)
-                smtp.sendmail(self.__fromEmail, self.__toEmail, msg.as_string())
+            smtp.ehlo()  # explicitly connect
+            smtp.login(self.__fromEmail, self.__password)
+            smtp.sendmail(self.__fromEmail, self.__toEmail, msg.as_string())
             print("Mail sent successfully via Gmail SMTP.")
         except Exception as e:
             print(f"Gmail SMTP send failed: {e}")
+        finally:
+            smtp.quit()
