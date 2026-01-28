@@ -25,13 +25,15 @@ def query_status(application_num, passport_number, surname, captchaHandle: Captc
 
         try:
             r = session.get(f"{ROOT}/ceacstattracker/status.aspx?App=IV", headers=headers)
-        except Exception:
+        except Exception as e:
+            print("GET failed:", e)
             continue
 
         soup = BeautifulSoup(r.text, "lxml")
 
         captcha_img = soup.find("img", id="c_status_ctl00_contentplaceholder1_defaultcaptcha_CaptchaImage")
         if not captcha_img:
+            print("Captcha image not found on initial page.")
             continue
 
         img_url = ROOT + captcha_img["src"]
@@ -63,18 +65,26 @@ def query_status(application_num, passport_number, surname, captchaHandle: Captc
 
         try:
             r = session.post(f"{ROOT}/ceacstattracker/status.aspx", headers=headers, data=data)
-        except Exception:
+        except Exception as e:
+            print("POST failed:", e)
             continue
 
-        # <-- WAIT 5 SECONDS BEFORE PARSING RESULTS
+        # Wait 5 seconds after submission
         time.sleep(5)
 
         soup = BeautifulSoup(r.text, "lxml")
 
+        # DEBUG: print first 1000 chars of response to see what page returned
+        print("POST response preview:\n", r.text[:1000])
+
+        # Search for status and case elements
         status_el = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblStatus")
         case_el = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblCaseNo")
+        print("status_el:", status_el)
+        print("case_el:", case_el)
 
         if not status_el or not case_el:
+            print("Status or Case element not found, retrying...")
             continue
 
         msg_el = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblMessage")
