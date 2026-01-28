@@ -5,17 +5,16 @@ from email.header import Header
 from .handle import NotificationHandle
 
 class EmailNotificationHandle(NotificationHandle):
-    def __init__(self, fromEmail: str, toEmail: str, password: str, smtp: str = "smtp.office365.com", port: int = 587) -> None:
+    def __init__(self, fromEmail: str, toEmail: str, password: str, smtpServer: str = "smtp.gmail.com") -> None:
         super().__init__()
         self.__fromEmail = fromEmail
         self.__toEmail = toEmail.split("|")
         self.__password = password
-        self.__smtp = smtp
-        self.__port = port
+        self.__smtpServer = smtpServer
+        self.__smtpPort = 465  # SSL port
 
     def send(self, result):
-        # Mail subject and body
-        mail_title = '[CEACStatusBot] {} : {}'.format(result["application_num_origin"], result['status'])
+        mail_title = f'[CEACStatusBot] {result["application_num_origin"]} : {result["status"]}'
         mail_content = str(result)
 
         msg = MIMEMultipart()
@@ -25,11 +24,9 @@ class EmailNotificationHandle(NotificationHandle):
         msg.attach(MIMEText(mail_content, 'plain', 'utf-8'))
 
         try:
-            # Connect to Outlook SMTP
-            with smtplib.SMTP(self.__smtp, self.__port) as server:
-                server.starttls()  # TLS is required
-                server.login(self.__fromEmail, self.__password)
-                server.sendmail(self.__fromEmail, self.__toEmail, msg.as_string())
-            print("Mail sent successfully via Outlook SMTP.")
+            with smtplib.SMTP_SSL(self.__smtpServer, self.__smtpPort) as smtp:
+                smtp.login(self.__fromEmail, self.__password)
+                smtp.sendmail(self.__fromEmail, self.__toEmail, msg.as_string())
+            print("Mail sent successfully via Gmail SMTP.")
         except Exception as e:
-            print(f"Outlook SMTP send failed: {e}")
+            print(f"Gmail SMTP send failed: {e}")
