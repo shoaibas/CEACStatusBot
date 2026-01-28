@@ -66,9 +66,11 @@ def query_status(application_num, passport_number, surname, captchaHandle: Captc
         except Exception:
             continue
 
+        # <-- WAIT 5 SECONDS BEFORE PARSING RESULTS
+        time.sleep(5)
+
         soup = BeautifulSoup(r.text, "lxml")
 
-        #  THIS IS THE KEY CHANGE
         status_el = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblStatus")
         case_el = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblCaseNo")
 
