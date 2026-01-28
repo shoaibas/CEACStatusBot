@@ -30,7 +30,7 @@ def query_status(location, application_num, passport_number, surname, captchaHan
         ROOT = "https://ceac.state.gov"
 
         try:
-            r = session.get(url=f"{ROOT}/ceacstattracker/status.aspx?App=NIV", headers=headers)
+            r = session.get(url=f"{ROOT}/ceacstattracker/status.aspx?App=IV", headers=headers)
         except Exception as e:
             print(e)
             continue
@@ -47,16 +47,16 @@ def query_status(location, application_num, passport_number, surname, captchaHan
         print(f"Captcha solved: {captcha_num}")
 
         # Find the correct value for the location dropdown
-        location_dropdown = soup.find("select", id="Location_Dropdown")
-        location_value = None
-        for option in location_dropdown.find_all("option"):
-            if location in option.text:
-                location_value = option["value"]
-                break
+   #     location_dropdown = soup.find("select", id="Location_Dropdown")
+     #   location_value = None
+    #    for option in location_dropdown.find_all("option"):
+     #       if location in option.text:
+     #           location_value = option["value"]
+      #          break
 
-        if not location_value:
-            print("Location not found in dropdown options.")
-            return {"success": False}
+   #     if not location_value:
+     #       print("Location not found in dropdown options.")
+     #       return {"success": False}
 
         # Fill form
         def update_from_current_page(cur_page, name, data):
@@ -73,8 +73,8 @@ def query_status(location, application_num, passport_number, surname, captchaHan
             "__VIEWSTATE": "8GJOG5GAuT1ex7KX3jakWssS08FPVm5hTO2feqUpJk8w5ukH4LG/o39O4OFGzy/f2XLN8uMeXUQBDwcO9rnn5hdlGUfb2IOmzeTofHrRNmB/hwsFyI4mEx0mf7YZo19g",
             "__VIEWSTATEGENERATOR": "DBF1011F",
             "__VIEWSTATEENCRYPTED": "",
-            "ctl00$ContentPlaceHolder1$Visa_Application_Type": "NIV",
-            "ctl00$ContentPlaceHolder1$Location_Dropdown": location_value,  # Use the correct value
+   #         "ctl00$ContentPlaceHolder1$Visa_Application_Type": "NIV",
+            #"ctl00$ContentPlaceHolder1$Location_Dropdown": location_value,  # Use the correct value
             "ctl00$ContentPlaceHolder1$Visa_Case_Number": application_num,
             "ctl00$ContentPlaceHolder1$Captcha": captcha_num,
             "ctl00$ContentPlaceHolder1$Passport_Number": passport_number,
