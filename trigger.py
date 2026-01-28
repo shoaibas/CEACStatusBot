@@ -50,7 +50,6 @@ try:
     PASSPORT_NUMBER = os.environ["PASSPORT_NUMBER"]
     SURNAME = os.environ["SURNAME"]
 
-    # FIXED: Removed LOCATION and now uses only expected args
     notificationManager = NotificationManager(
         number=NUMBER,
         passport_number=PASSPORT_NUMBER,
@@ -64,7 +63,7 @@ except KeyError as e:
 FROM = os.getenv("FROM")
 TO = os.getenv("TO")
 PASSWORD = os.getenv("PASSWORD")
-SMTP = os.getenv("SMTP")  # optional, defaults to standard if None
+SMTP = os.getenv("SMTP") or "smtp.office365.com"  # default to Outlook SMTP
 
 if FROM and TO and PASSWORD:
     emailNotificationHandle = EmailNotificationHandle(FROM, TO, PASSWORD, SMTP)
