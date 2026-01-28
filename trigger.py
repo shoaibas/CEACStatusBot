@@ -44,12 +44,18 @@ if not GH_TOKEN:
 if not os.path.exists("status_record.json"):
     download_artifact()
 
+
 try:
-    LOCATION = os.environ["LOCATION"]
     NUMBER = os.environ["NUMBER"]
     PASSPORT_NUMBER = os.environ["PASSPORT_NUMBER"]
     SURNAME = os.environ["SURNAME"]
-    notificationManager = NotificationManager(LOCATION, NUMBER, PASSPORT_NUMBER, SURNAME)
+
+    # FIXED: Removed LOCATION and now uses only expected args
+    notificationManager = NotificationManager(
+        number=NUMBER,
+        passport_number=PASSPORT_NUMBER,
+        surname=SURNAME
+    )
 except KeyError as e:
     raise RuntimeError(f"Missing required env var: {e}") from e
 
