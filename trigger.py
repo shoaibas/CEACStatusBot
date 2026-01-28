@@ -68,6 +68,19 @@ API_KEY = os.getenv("API")  # NEW: Mailgun API key
 if FROM and TO and API_KEY:
     emailNotificationHandle = EmailNotificationHandle(FROM, TO, apiKey=API_KEY)
     notificationManager.addHandle(emailNotificationHandle)
+    # TEST EMAIL - uncomment only for testing
+     emailNotificationHandle.send({
+         "application_num_origin": "TEST",
+         "status": "Test Email",
+        "description": "This is a test email from CEACStatusBot",
+         "visa_type": "TEST",
+         "application_num": "TEST123",
+         "case_created": None,
+         "case_last_updated": None
+     })
+
+
+
 else:
     print("Email notification config missing or incomplete")
 
