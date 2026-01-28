@@ -65,10 +65,9 @@ FROM = os.getenv("FROM")
 TO = os.getenv("TO")
 PASSWORD = os.getenv("PASSWORD")
 SMTP = os.getenv("SMTP", "smtp.office365.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 
 if FROM and TO and PASSWORD:
-    emailNotificationHandle = EmailNotificationHandle(FROM, TO, PASSWORD, SMTP, SMTP_PORT)
+    emailNotificationHandle = EmailNotificationHandle(FROM, TO, PASSWORD, SMTP)
     notificationManager.addHandle(emailNotificationHandle)
 else:
     print("Email notification config missing or incomplete")
@@ -95,7 +94,6 @@ print("FROM:", FROM)
 print("TO:", TO)
 print("PASSWORD loaded:", bool(PASSWORD))
 print("SMTP:", SMTP)
-print("SMTP_PORT:", SMTP_PORT)
 
 if FROM and TO and PASSWORD:
     print("Sending test email...")
