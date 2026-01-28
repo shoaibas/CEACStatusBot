@@ -64,7 +64,7 @@ except KeyError as e:
 FROM = os.getenv("FROM")
 TO = os.getenv("TO")
 PASSWORD = os.getenv("PASSWORD")
-SMTP = os.getenv("SMTP", "smtp.gmail.com")
+SMTP = os.getenv("SMTP", "smtp.mailgun.org")
 
 if FROM and TO and PASSWORD:
     emailNotificationHandle = EmailNotificationHandle(FROM, TO, PASSWORD, SMTP)
