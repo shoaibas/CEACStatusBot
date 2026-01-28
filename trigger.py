@@ -63,8 +63,9 @@ except KeyError as e:
 # --- Optional: Email notifications ---
 FROM = os.getenv("FROM")
 TO = os.getenv("TO")
-PASSWORD = os.getenv("PASSWORD")
-SMTP = os.getenv("SMTP", "smtp.office365.com")
+PASSWORD = os.getenv("PASSWORD")  # or API_KEY if using Mailgun
+
+SMTP = os.getenv("SMTP", "smtp.gmail.com")  # optional, fallback to Gmail
 
 if FROM and TO and PASSWORD:
     emailNotificationHandle = EmailNotificationHandle(FROM, TO, PASSWORD, SMTP)
@@ -92,8 +93,7 @@ notificationManager.send()
 print("Debug: Email config:")
 print("FROM:", FROM)
 print("TO:", TO)
-print("PASSWORD loaded:", bool(PASSWORD))
-print("SMTP:", SMTP)
+print("PASSWORD/API loaded:", bool(PASSWORD))
 
 if FROM and TO and PASSWORD:
     print("Sending test email...")
