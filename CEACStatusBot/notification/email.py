@@ -2,7 +2,6 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
-
 from .handle import NotificationHandle
 
 class EmailNotificationHandle(NotificationHandle):
@@ -15,7 +14,7 @@ class EmailNotificationHandle(NotificationHandle):
         self.__smtp_port = 465  # SSL port
 
     def send(self, result):
-        mail_title = f"[CEACStatusBot] {result['application_num_origin']} : {result['status']}"
+        mail_title = '[CEACStatusBot] {} : {}'.format(result["application_num_origin"], result['status'])
         mail_content = str(result)
 
         msg = MIMEMultipart()
@@ -25,10 +24,9 @@ class EmailNotificationHandle(NotificationHandle):
         msg.attach(MIMEText(mail_content, 'plain', 'utf-8'))
 
         try:
-            # Connect via SSL
             with smtplib.SMTP_SSL(self.__smtp_server, self.__smtp_port) as smtp:
                 smtp.login(self.__fromEmail, self.__password)
                 smtp.sendmail(self.__fromEmail, self.__toEmail, msg.as_string())
-            print("Gmail SMTP sent successfully!")
-        except smtplib.SMTPException as e:
+            print("Mail sent successfully via Gmail SMTP.")
+        except Exception as e:
             print(f"Gmail SMTP send failed: {e}")
