@@ -85,23 +85,3 @@ else:
 # --- Send notifications ---
 notificationManager.send()
 
-
-# --- TEST EMAIL (will send once, delete afterward) ---
-print("Debug: Email config:")
-print("FROM:", FROM)
-print("TO:", TO)
-print("PASSWORD loaded:", bool(PASSWORD))
-
-if FROM and TO and PASSWORD:
-    print("Sending test email...")
-    emailNotificationHandle.send({
-        "application_num_origin": "TEST",
-        "status": "Test Email",
-        "description": "This is a test email from CEACStatusBot",
-        "visa_type": "TEST",
-        "application_num": "TEST123",
-        "case_created": None,
-        "case_last_updated": None
-    })
-else:
-    print("Test email not sent because configuration is incomplete.")
