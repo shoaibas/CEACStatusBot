@@ -107,8 +107,8 @@ def query_status(location, application_num, passport_number, surname, captchaHan
         assert application_num_returned == application_num
         status = status_tag.string
         visa_type = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblAppName").string
-        case_created = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblSubmitDate").string
-        case_last_updated = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblStatusDate").string
+        case_created = None
+        case_last_updated = None
         description = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblMessage").string
 
         result.update({
