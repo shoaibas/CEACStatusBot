@@ -88,7 +88,13 @@ notificationManager.send()
 
 
 # --- TEST EMAIL (will send once, you can delete this block afterward) ---
+print("Debug: Email config:")
+print("FROM:", FROM)
+print("TO:", TO)
+print("API_KEY loaded:", bool(API_KEY))
+
 if FROM and TO and API_KEY:
+    print("Sending test email...")
     emailNotificationHandle.send({
         "application_num_origin": "TEST",
         "status": "Test Email",
@@ -98,3 +104,5 @@ if FROM and TO and API_KEY:
         "case_created": None,
         "case_last_updated": None
     })
+else:
+    print("Test email not sent because configuration is incomplete.")
