@@ -18,13 +18,11 @@ def query_status(application_num, passport_number, surname, captchaHandle: Captc
             "User-Agent": "Mozilla/5.0",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.5",
-            "Connection": "keep-alive",
         }
 
         session = requests.Session()
         ROOT = "https://ceac.state.gov"
 
-        # --- Load IV page ---
         try:
             r = session.get(f"{ROOT}/ceacstattracker/status.aspx?App=IV", headers=headers)
         except Exception:
@@ -32,7 +30,6 @@ def query_status(application_num, passport_number, surname, captchaHandle: Captc
 
         soup = BeautifulSoup(r.text, "lxml")
 
-        # --- Get captcha ---
         captcha_img = soup.find("img", id="c_status_ctl00_contentplaceholder1_defaultcaptcha_CaptchaImage")
         if not captcha_img:
             continue
@@ -41,13 +38,11 @@ def query_status(application_num, passport_number, surname, captchaHandle: Captc
         img_resp = session.get(img_url)
         captcha_value = captchaHandle.solve(img_resp.content)
 
-        # --- Helper to copy hidden fields ---
         def copy_hidden(name, data):
             el = soup.find("input", {"name": name})
             if el:
                 data[name] = el.get("value", "")
 
-        # --- POST payload ---
         data = {
             "__EVENTTARGET": "ctl00$ContentPlaceHolder1$btnSubmit",
             "__EVENTARGUMENT": "",
@@ -58,7 +53,6 @@ def query_status(application_num, passport_number, surname, captchaHandle: Captc
             "ctl00$ContentPlaceHolder1$Captcha": captcha_value,
         }
 
-        # Required ASP.NET fields
         for field in [
             "__VIEWSTATE",
             "__VIEWSTATEGENERATOR",
@@ -74,22 +68,15 @@ def query_status(application_num, passport_number, surname, captchaHandle: Captc
 
         soup = BeautifulSoup(r.text, "lxml")
 
-        # --- IV RESULT MODAL (THIS IS THE FIX) ---
-        modal = soup.find(
-            "div",
-            id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_pnlStatus",
-        )
-
-        if not modal:
-            continue
-
-        status_el = modal.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblStatus")
-        case_el = modal.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblCaseNo")
-        msg_el = modal.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblMessage")
-        visa_el = modal.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblAppName")
+        #  THIS IS THE KEY CHANGE
+        status_el = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblStatus")
+        case_el = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblCaseNo")
 
         if not status_el or not case_el:
             continue
+
+        msg_el = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblMessage")
+        visa_el = soup.find("span", id="ctl00_ContentPlaceHolder1_ucApplicationStatusView_lblAppName")
 
         result.update({
             "success": True,
