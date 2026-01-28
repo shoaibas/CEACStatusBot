@@ -10,7 +10,7 @@ from CEACStatusBot import (
     TelegramNotificationHandle,
 )
 
-# --- Load .env if present ---
+# --- Load .env if present, else fallback to system env ---
 if os.path.exists(".env"):
     load_dotenv(dotenv_path=".env")
 else:
@@ -44,6 +44,7 @@ if not GH_TOKEN:
 if not os.path.exists("status_record.json"):
     download_artifact()
 
+
 try:
     NUMBER = os.environ["NUMBER"]
     PASSPORT_NUMBER = os.environ["PASSPORT_NUMBER"]
@@ -58,13 +59,12 @@ except KeyError as e:
     raise RuntimeError(f"Missing required env var: {e}") from e
 
 
-# --- Optional: Email notifications (Gmail SSL) ---
+# --- Optional: Email notifications ---
 FROM = os.getenv("FROM")         # Gmail address
 TO = os.getenv("TO")             # Recipients separated by "|"
 PASSWORD = os.getenv("PASSWORD") # Gmail app password
 
 if FROM and TO and PASSWORD:
-    # Gmail SSL version: only pass FROM, TO, PASSWORD
     emailNotificationHandle = EmailNotificationHandle(FROM, TO, PASSWORD)
     notificationManager.addHandle(emailNotificationHandle)
 else:
@@ -86,7 +86,7 @@ else:
 notificationManager.send()
 
 
-# --- TEST EMAIL (will send once, delete after confirmation) ---
+# --- TEST EMAIL (will send once, delete afterward) ---
 print("Debug: Email config:")
 print("FROM:", FROM)
 print("TO:", TO)
